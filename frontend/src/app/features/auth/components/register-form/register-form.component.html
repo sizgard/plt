@@ -1,0 +1,54 @@
+<form class="login-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+  @if (errorMessage) {
+    <div class="error-banner">
+      {{errorMessage}}
+    </div>
+  }
+  <div class="form-group">
+    <label for="name">Имя</label>
+    <input
+      id="name"
+      type="text"
+      formControlName="name"
+      placeholder="Ivan"
+      [class.input-error]="name.touched && name.invalid"
+    >
+    @if (name.touched && name.invalid) {
+      <span class="error-text">Введите имя (минимум 2 символа)</span>
+    }
+  </div>
+  <div class="form-group">
+    <label for="email">email</label>
+    <input
+    id="email"
+    type="email"
+    formControlName="email"
+    placeholder="email@example.ru"
+    [class.input-error]="email.touched && email.invalid">
+    @if (email.touched && email.invalid){
+      <span class="error-text">Некорректный email</span>
+    }
+  </div>
+  <div class="form-group">
+    <label for="password">Пароль</label>
+    <input
+    id="password"
+    type="password"
+    formControlName="password"
+    placeholder="*****"
+    [class.input-error]="password.touched && password.invalid">
+    @if (password.touched && password.invalid){
+      <span class="error-text">Пароль должен быть от 6 символов</span>
+    }
+  </div>
+  <button type="submit" class="btn-primary" [disabled]="form.invalid || isLoading">
+    @if (isLoading){
+      Регистрация
+    } @else {
+      Зарегестрироваться
+    }
+  </button>
+  <div class="form-footer">
+    <a routerLink="/auth/login">Уже есть аккаунт? Войти</a>
+  </div>
+</form>
