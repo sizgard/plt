@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import kz.plt.backend.auth.api.dto.AuthResponse;
 import kz.plt.backend.auth.api.dto.LoginRequest;
 import kz.plt.backend.auth.api.dto.RegisterRequest;
@@ -32,9 +34,10 @@ public class AuthController {
             @ApiResponse(responseCode = "201", description = "Пользователь успешно зарегистрирован"),
             @ApiResponse(responseCode = "409", description = "Email уже занят")
     })
-    public AuthResponse register(@RequestBody RegisterRequest req, @Parameter(hidden = true) HttpServletRequest request) {
-        AuthenticatedUser user = authService.register(req.name(), req.email(), req.password(), request.getSession(true));
-        return new AuthResponse(user.id(), user.email(), user.role());
+    public AuthResponse register(@Valid @RequestBody RegisterRequest req, @Parameter(hidden = true) HttpServletRequest request) {
+        AuthenticatedUser user = authService.register(req.name(), req.email(), req.password());
+        bindSession(request, user);
+        return new AuthResponse(user.id(), user.email(), user.roles());
     }
 
     @PostMapping("/login")
@@ -43,9 +46,10 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Успешная авторизация"),
             @ApiResponse(responseCode = "401", description = "Неверный логин/пароль или аккаунт заблокирован")
     })
-    public AuthResponse login(@RequestBody LoginRequest req, @Parameter(hidden = true) HttpServletRequest request) {
-        AuthenticatedUser user = authService.login(req.email(), req.password(), request.getSession(true));
-        return new AuthResponse(user.id(), user.email(), user.role());
+    public AuthResponse login(@Valid @RequestBody LoginRequest req, @Parameter(hidden = true) HttpServletRequest request) {
+        AuthenticatedUser user = authService.login(req.email(), req.password());
+        bindSession(request, user);
+        return new AuthResponse(user.id(), user.email(), user.roles());
     }
 
     @PostMapping("/logout")
@@ -53,7 +57,10 @@ public class AuthController {
     @Operation(summary = "Выход из системы", description = "Инвалидирует текущую сессию пользователя")
     @ApiResponse(responseCode = "204", description = "Сессия успешно завершена")
     public void logout(@Parameter(hidden = true) HttpServletRequest request) {
-        authService.logout(request.getSession(false));
+        HttpSession session = request.getSession(false);
+        if(session != null){
+            session.invalidate();
+        }
     }
 
     @GetMapping("/me")
@@ -63,6 +70,15 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Пользователь не авторизован")
     })
     public AuthResponse me(@Parameter(hidden = true) @CurrentUser AuthenticatedUser currentUser) {
-        return new AuthResponse(currentUser.id(), currentUser.email(), currentUser.role());
+        return new AuthResponse(currentUser.id(), currentUser.email(), currentUser.roles());
+    }
+
+    private void bindSession(HttpServletRequest request, AuthenticatedUser user){
+        HttpSession existingSession = request.getSession(false);
+        if (existingSession != null){
+            existingSession.invalidate();
+        }
+        HttpSession newSession = request.getSession(true);
+        newSession.setAttribute(AuthenticatedUser.SESSION_KEY, user);
     }
 }

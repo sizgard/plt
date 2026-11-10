@@ -1,4 +1,4 @@
--- 1. Пользователи
+
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- 2. Роли (без колонки permissions — она переехала в связующую таблицу)
 CREATE TABLE IF NOT EXISTS roles (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
@@ -18,7 +17,6 @@ CREATE TABLE IF NOT EXISTS roles (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- 3. Связь Пользователи <-> Роли (Многие-ко-многим)
 CREATE TABLE IF NOT EXISTS user_roles (
     user_id BIGINT UNSIGNED NOT NULL,
     role_id BIGINT UNSIGNED NOT NULL,
@@ -27,14 +25,13 @@ CREATE TABLE IF NOT EXISTS user_roles (
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 );
 
--- 4. Справочник модулей системы
 CREATE TABLE IF NOT EXISTS modules (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    slug VARCHAR(50) NOT NULL UNIQUE,  -- Системный код: 'orders', 'users', 'analytics'
-    title VARCHAR(100) NOT NULL        -- Название для UI: 'Управление заказами'
+    slug VARCHAR(50) NOT NULL UNIQUE,
+    title VARCHAR(100) NOT NULL
 );
 
--- 5. Матрица прав: Роль + Модуль = 64-битная маска действий
+
 CREATE TABLE IF NOT EXISTS role_permissions (
     role_id BIGINT UNSIGNED NOT NULL,
     module_id INT UNSIGNED NOT NULL,

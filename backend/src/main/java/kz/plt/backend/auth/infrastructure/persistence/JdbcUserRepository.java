@@ -71,7 +71,10 @@ class JdbcUserRepository implements UserRepository{
                         SELECT ?, id FROM roles WHERE name = ?
                         """;
                 for (String role : user.roles()) {
-                    jdbc.update(rolesSql, newId, role);
+                    int affected = jdbc.update(rolesSql, newId, role);
+                            if( affected == 0) {
+                                throw new IllegalStateException("Роль не найдена в базе данных: " + role);
+                            };
                 }
             }
             return new User(newId, user.name(), user.email(), user.password(), user.blocked(), user.roles(), user.createdAt());

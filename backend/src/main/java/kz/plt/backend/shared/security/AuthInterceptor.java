@@ -33,7 +33,7 @@ public class AuthInterceptor implements HandlerInterceptor {
                 throw new UnauthorizedException("Требуется авторизация");
             }
             AuthenticatedUser user = userOpt.get();
-            if (!requireRole.value().equalsIgnoreCase(user.role())) {
+            if (!user.hasRole(requireRole.value())) {
                 throw new ForbiddenException("Недостаточно прав для выполнения действия");
             }
         }

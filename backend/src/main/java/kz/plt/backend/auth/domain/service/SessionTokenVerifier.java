@@ -11,14 +11,13 @@ import java.util.Optional;
 
 @Component
 class SessionTokenVerifier implements TokenVerifier{
-    public static final String AUTH_USER_ATTR ="AUTH_USER";
     @Override
     public Optional<AuthenticatedUser> verify(HttpServletRequest request){
         HttpSession session = request.getSession(false);
         if(session == null){
             return Optional.empty();
         }
-        Object user = session.getAttribute(AUTH_USER_ATTR);
+        Object user = session.getAttribute(AuthenticatedUser.SESSION_KEY);
         if(user instanceof AuthenticatedUser authenticatedUser){
             return Optional.of(authenticatedUser);
         }

@@ -1,12 +1,12 @@
 package kz.plt.backend.auth.domain.service;
 
-import jakarta.servlet.http.HttpSession;
 import kz.plt.backend.auth.domain.exception.InvalidCredentialsException;
 import kz.plt.backend.auth.domain.exception.UserAlreadyExistsException;
 import kz.plt.backend.auth.domain.model.User;
 import kz.plt.backend.auth.domain.port.UserRepository;
 import kz.plt.backend.shared.security.AuthenticatedUser;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
@@ -14,36 +14,33 @@ import java.util.Set;
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordHasher passwordHasher;
+
     public AuthService(UserRepository userRepository, PasswordHasher passwordHasher){
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
     }
-    public AuthenticatedUser register(String name, String email, String password, HttpSession session){
+
+    @Transactional
+    public AuthenticatedUser register(String name, String email, String password) {
         if(userRepository.existsByEmail(email)){
             throw new UserAlreadyExistsException(email);
         }
         String passwordHash = passwordHasher.hash(password);
         User newUser = User.createNew(name, email, passwordHash, Set.of("USER"));
         User savedUser = userRepository.save(newUser);
-        return createSessionForUser(savedUser, session);
+        return createSessionForUser(savedUser);
     }
-    public AuthenticatedUser login(String email, String password, HttpSession session){
+
+    @Transactional(readOnly = true)
+    public AuthenticatedUser login(String email, String password){
         User user = userRepository.findByEmail(email)
                 .orElseThrow(InvalidCredentialsException::new);
         if(user.blocked() || !passwordHasher.matches(password, user.password())){
             throw new InvalidCredentialsException();
         }
-        return createSessionForUser(user, session);
+        return createSessionForUser(user);
     }
-    public void logout(HttpSession session){
-        if(session != null){
-            session.invalidate();
-        }
-    }
-    private AuthenticatedUser createSessionForUser(User user, HttpSession session){
-        String primaryRole = user.roles().isEmpty() ? "USER" : user.roles().iterator().next();
-        AuthenticatedUser authUser = new AuthenticatedUser(user.id(), user.email(), primaryRole);
-        session.setAttribute(SessionTokenVerifier.AUTH_USER_ATTR, authUser);
-        return authUser;
+    private AuthenticatedUser createSessionForUser(User user){
+        return new AuthenticatedUser(user.id(), user.email(), user.roles());
     }
 }
