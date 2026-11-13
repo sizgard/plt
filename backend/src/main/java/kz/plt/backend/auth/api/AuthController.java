@@ -37,7 +37,7 @@ public class AuthController {
     public AuthResponse register(@Valid @RequestBody RegisterRequest req, @Parameter(hidden = true) HttpServletRequest request) {
         AuthenticatedUser user = authService.register(req.name(), req.email(), req.password());
         bindSession(request, user);
-        return new AuthResponse(user.id(), user.email(), user.roles());
+        return new AuthResponse(user.id(), user.email(), user.roles(), user.permissions());
     }
 
     @PostMapping("/login")
@@ -49,7 +49,7 @@ public class AuthController {
     public AuthResponse login(@Valid @RequestBody LoginRequest req, @Parameter(hidden = true) HttpServletRequest request) {
         AuthenticatedUser user = authService.login(req.email(), req.password());
         bindSession(request, user);
-        return new AuthResponse(user.id(), user.email(), user.roles());
+        return new AuthResponse(user.id(), user.email(), user.roles(), user.permissions());
     }
 
     @PostMapping("/logout")
@@ -70,7 +70,7 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Пользователь не авторизован")
     })
     public AuthResponse me(@Parameter(hidden = true) @CurrentUser AuthenticatedUser currentUser) {
-        return new AuthResponse(currentUser.id(), currentUser.email(), currentUser.roles());
+        return new AuthResponse(currentUser.id(), currentUser.email(), currentUser.roles(), currentUser.permissions());
     }
 
     private void bindSession(HttpServletRequest request, AuthenticatedUser user){

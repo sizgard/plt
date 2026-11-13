@@ -27,6 +27,17 @@ public class AuthInterceptor implements HandlerInterceptor {
         Optional<AuthenticatedUser> userOpt = tokenVerifier.verify(request);
         userOpt.ifPresent(user -> request.setAttribute(CurrentUserArgumentResolver.CURRENT_USER_ATTRIBUTE, user));
 
+        RequirePermission requirePermission = getRequirePermissionAnnotation(handlerMethod);
+        if (requirePermission != null) {
+            if (userOpt.isEmpty()){
+                throw new UnauthorizedException("Требует авторизация");
+            }
+            AuthenticatedUser user = userOpt.get();
+            if(!user.hasPermission(requirePermission.module(), requirePermission.action())){
+                throw new ForbiddenException("Недостаточно прав для выполнения действия");
+            }
+        }
+
         RequireRole requireRole = getRequireRoleAnnotation(handlerMethod);
         if (requireRole != null) {
             if (userOpt.isEmpty()) {
@@ -46,11 +57,19 @@ public class AuthInterceptor implements HandlerInterceptor {
         return true;
     }
 
-    public RequireRole getRequireRoleAnnotation(HandlerMethod handlerMethod){
+    private RequireRole getRequireRoleAnnotation(HandlerMethod handlerMethod){
         RequireRole annotation = handlerMethod.getMethodAnnotation(RequireRole.class);
-        if(annotation == null){
-            annotation = handlerMethod.getBeanType().getAnnotation(RequireRole.class);
+        if(annotation != null){
+            return annotation;
         }
-        return annotation;
+        return handlerMethod.getBeanType().getAnnotation(RequireRole.class);
+    }
+
+    private RequirePermission getRequirePermissionAnnotation(HandlerMethod handlerMethod){
+        RequirePermission annotation = handlerMethod.getMethodAnnotation(RequirePermission.class);
+        if(annotation != null){
+            return annotation;
+        }
+        return handlerMethod.getBeanType().getAnnotation(RequirePermission.class);
     }
 }

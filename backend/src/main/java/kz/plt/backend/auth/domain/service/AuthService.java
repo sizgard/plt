@@ -8,6 +8,7 @@ import kz.plt.backend.shared.security.AuthenticatedUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -41,6 +42,7 @@ public class AuthService {
         return createSessionForUser(user);
     }
     private AuthenticatedUser createSessionForUser(User user){
-        return new AuthenticatedUser(user.id(), user.email(), user.roles());
+        Map<String, Long> permissions = userRepository.findPermissionsByUserId(user.id());
+        return new AuthenticatedUser(user.id(), user.email(), user.roles(), permissions);
     }
 }

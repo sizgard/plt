@@ -74,7 +74,7 @@ class JdbcUserRepository implements UserRepository{
                     int affected = jdbc.update(rolesSql, newId, role);
                             if( affected == 0) {
                                 throw new IllegalStateException("Роль не найдена в базе данных: " + role);
-                            };
+                            }
                 }
             }
             return new User(newId, user.name(), user.email(), user.password(), user.blocked(), user.roles(), user.createdAt());
@@ -83,6 +83,25 @@ class JdbcUserRepository implements UserRepository{
         String updateSql = "UPDATE users SET name = ?, password = ?, blocked = ? WHERE id = ?";
         jdbc.update(updateSql, user.name(), user.password(), user.blocked(), user.id());
         return user;
+    }
+
+    @Override
+    public Map<String, Long> findPermissionsByUserId(Long id){
+        String sql = """
+                SELECT m.slug, BIT_OR(rp.permissions_mask) AS mask
+                FROM user_roles ur
+                JOIN role_permissions rp ON ur.role_id = rp.role_id
+                JOIN modules m ON rp.module_id = m.id
+                WHERE ur.user_id = ?
+                GROUP BY m.slug
+                """;
+        return jdbc.query(sql, rs -> {
+            Map<String, Long> permissions = new HashMap<>();
+            while (rs.next()){
+                permissions.put(rs.getString("slug"), rs.getLong("mask"));
+            }
+            return permissions;
+        }, id);
     }
 
     private List<User> queryUsers(String sql, Object... params) {
